@@ -274,7 +274,7 @@ client = RadiusDeskClient(
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/radiusdesk-api.git
+git clone https://github.com/keeganwhite/radiusdesk-api.git
 cd radiusdesk-api
 
 # Create a virtual environment
@@ -286,11 +286,28 @@ pip install -r requirements-dev.txt
 
 # Install package in editable mode
 pip install -e .
+
+# Create .env file from template
+cp .env.example .env
+# Edit .env with your credentials
 ```
 
 ### Running Tests
 
-The package uses integration tests that require a live RadiusDesk instance. Set the following environment variables:
+The package uses integration tests that require a live RadiusDesk instance.
+
+**Option 1: Using .env file (Recommended)**
+
+```bash
+# Create .env file from template
+cp .env.example .env
+# Edit .env with your credentials
+
+# Run tests
+./run_tests.sh
+```
+
+**Option 2: Manual environment variables**
 
 ```bash
 export RADIUSDESK_URL="https://radiusdesk.example.com"
@@ -299,11 +316,7 @@ export RADIUSDESK_PASSWORD="password"
 export RADIUSDESK_CLOUD_ID="1"
 export RADIUSDESK_REALM_ID="1"
 export RADIUSDESK_PROFILE_ID="2"
-```
 
-Then run the tests:
-
-```bash
 pytest tests/ -v
 ```
 
