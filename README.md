@@ -5,7 +5,7 @@
 [![Python Support](https://img.shields.io/pypi/pyversions/radiusdesk-api.svg)](https://pypi.org/project/radiusdesk-api/)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-A production-ready Python client for interacting with the cake4 [RADIUSdesk](https://www.radiusdesk.com/) API. This package provides a simple interface for managing vouchers, permanent users, and user balances in your RadiusDesk instance.
+A Python client for interacting with the cake4 [RADIUSdesk](https://www.radiusdesk.com/) API. This package provides a simple interface for managing vouchers, permanent users, and user balances in your RadiusDesk instance.
 
 ## Features
 
