@@ -3,6 +3,7 @@
 import os
 import pytest
 import time
+import random
 from radiusdesk_api import RadiusDeskClient
 
 
@@ -39,6 +40,18 @@ def test_user_config():
     }
 
 
+def generate_unique_username(prefix="test_user"):
+    """
+    Generate a unique username to avoid collisions in parallel test runs.
+
+    Combines timestamp with random suffix to ensure uniqueness even when
+    tests run simultaneously across different Python versions in CI/CD.
+    """
+    timestamp = int(time.time())
+    random_suffix = random.randint(1000, 9999)
+    return f"{prefix}_{timestamp}_{random_suffix}"
+
+
 @pytest.fixture
 def cleanup_users(client):
     """
@@ -69,8 +82,8 @@ def test_list_users(client):
 
 def test_create_permanent_user(client, test_user_config, cleanup_users):
     """Test creating a permanent user."""
-    # Generate unique username using timestamp
-    username = f"test_user_{int(time.time())}"
+    # Generate unique username
+    username = generate_unique_username("test_user")
     password = "testpassword123"
 
     result = client.users.create(
@@ -92,7 +105,7 @@ def test_create_permanent_user(client, test_user_config, cleanup_users):
 
 def test_create_user_with_minimal_params(client, test_user_config, cleanup_users):
     """Test creating a user with only required parameters."""
-    username = f"minimal_user_{int(time.time())}"
+    username = generate_unique_username("minimal_user")
     password = "password123"
 
     result = client.users.create(
@@ -118,7 +131,7 @@ def test_list_users_with_pagination(client):
 def test_add_data_topup(client, test_user_config, cleanup_users):
     """Test adding data top-up to a permanent user."""
     # First create a user
-    username = f"data_test_user_{int(time.time())}"
+    username = generate_unique_username("data_test_user")
     password = "password123"
 
     user = client.users.create(
@@ -151,7 +164,7 @@ def test_add_data_topup(client, test_user_config, cleanup_users):
 def test_add_time_topup(client, test_user_config, cleanup_users):
     """Test adding time top-up to a permanent user."""
     # First create a user
-    username = f"time_test_user_{int(time.time())}"
+    username = generate_unique_username("time_test_user")
     password = "password123"
 
     user = client.users.create(
@@ -220,7 +233,7 @@ def test_add_time_topup_to_existing_user(client):
 def test_delete_permanent_user(client, test_user_config):
     """Test deleting a permanent user."""
     # First create a user to delete
-    username = f"delete_test_user_{int(time.time())}"
+    username = generate_unique_username("delete_test_user")
     password = "password123"
 
     user = client.users.create(
