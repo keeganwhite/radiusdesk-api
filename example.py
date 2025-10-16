@@ -55,7 +55,7 @@ voucher = client.vouchers.create(
     profile_id=profile_id,
     quantity=1
 )
-print(f"Created voucher: {voucher}")
+print(f"Created voucher: {voucher.get('name')} (ID: {voucher.get('id')})")
 
 # List vouchers
 print("\n--- Listing vouchers ---")
@@ -66,9 +66,23 @@ if 'items' in vouchers:
         print(f"  - {v.get('name', 'N/A')}")
 
 # Get voucher details
-print(f"\n--- Getting details for voucher: {voucher} ---")
-details = client.vouchers.get_details(voucher)
+voucher_code = voucher.get('name')
+print(f"\n--- Getting details for voucher: {voucher_code} ---")
+details = client.vouchers.get_details(voucher_code)
 print(f"Details: {details}")
+
+# Delete the voucher we created
+print(f"\n--- Deleting test voucher: {voucher_code} ---")
+voucher_id = voucher.get('id')
+if voucher_id:
+    try:
+        delete_result = client.vouchers.delete(voucher_id=voucher_id)
+        if delete_result.get('success'):
+            print(f"Successfully deleted voucher ID: {voucher_id}")
+        else:
+            print(f"Delete result: {delete_result}")
+    except Exception as e:
+        print(f"Failed to delete voucher: {e}")
 
 # Create a permanent user
 print("\n--- Creating a permanent user ---")
@@ -91,5 +105,16 @@ print(f"Total users: {users.get('totalCount', 'N/A')}")
 if 'items' in users:
     for u in users['items'][:5]:
         print(f"  - {u.get('username', 'N/A')}")
+
+# Delete the test user we created
+print(f"\n--- Deleting test user: {test_username} ---")
+if isinstance(user, dict):
+    user_id = user.get('id')  # Simplified since create() returns just the data
+    if user_id:
+        delete_result = client.users.delete(user_id=user_id)
+        if delete_result.get('success'):
+            print(f"Successfully deleted user ID: {user_id}")
+        else:
+            print(f"Delete result: {delete_result}")
 
 print("\n All operations completed successfully!")

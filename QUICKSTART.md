@@ -32,12 +32,12 @@ if client.check_connection():
 
 ```python
 # Create a single voucher
-voucher_code = client.vouchers.create(
+voucher = client.vouchers.create(
     realm_id=1,
     profile_id=2,
     quantity=1
 )
-print(f"Voucher created: {voucher_code}")
+print(f"Voucher created: {voucher['name']} (ID: {voucher['id']})")
 ```
 
 ### List Vouchers
@@ -53,8 +53,18 @@ for voucher in result['items']:
 
 ```python
 # Get detailed usage information about a voucher
-details = client.vouchers.get_details("VOUCHER-CODE")
+voucher_code = voucher['name']
+details = client.vouchers.get_details(voucher_code)
 print(details)
+```
+
+### Delete a Voucher
+
+```python
+# Delete a voucher by ID
+result = client.vouchers.delete(voucher_id=123)
+if result.get('success'):
+    print("Voucher deleted successfully!")
 ```
 
 ### Create a Permanent User
@@ -91,6 +101,15 @@ client.users.add_time(
     unit="minutes",
     comment="Bonus time"
 )
+```
+
+### Delete a Permanent User
+
+```python
+# Delete a permanent user by ID
+result = client.users.delete(user_id=123)
+if result.get('success'):
+    print("User deleted successfully!")
 ```
 
 ## Error Handling

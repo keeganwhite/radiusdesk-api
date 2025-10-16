@@ -39,13 +39,35 @@ def test_user_config():
     }
 
 
+@pytest.fixture
+def cleanup_users(client):
+    """
+    Fixture that tracks created user IDs and deletes them after the test.
+
+    Usage:
+        user = client.users.create(...)
+        cleanup_users.append(user['id'])
+    """
+    created_user_ids = []
+
+    yield created_user_ids
+
+    # Cleanup: Delete all created users
+    for user_id in created_user_ids:
+        try:
+            client.users.delete(user_id=user_id)
+            print(f"Cleaned up test user ID: {user_id}")
+        except Exception as e:
+            print(f"Failed to cleanup user ID {user_id}: {e}")
+
+
 def test_list_users(client):
     """Test listing permanent users."""
     result = client.users.list(limit=10)
     assert isinstance(result, dict)
 
 
-def test_create_permanent_user(client, test_user_config):
+def test_create_permanent_user(client, test_user_config, cleanup_users):
     """Test creating a permanent user."""
     # Generate unique username using timestamp
     username = f"test_user_{int(time.time())}"
@@ -62,8 +84,13 @@ def test_create_permanent_user(client, test_user_config):
     )
     assert isinstance(result, dict)
 
+    # Track for cleanup
+    user_id = result.get('id')
+    if user_id:
+        cleanup_users.append(user_id)
 
-def test_create_user_with_minimal_params(client, test_user_config):
+
+def test_create_user_with_minimal_params(client, test_user_config, cleanup_users):
     """Test creating a user with only required parameters."""
     username = f"minimal_user_{int(time.time())}"
     password = "password123"
@@ -76,6 +103,11 @@ def test_create_user_with_minimal_params(client, test_user_config):
     )
     assert isinstance(result, dict)
 
+    # Track for cleanup
+    user_id = result.get('id')
+    if user_id:
+        cleanup_users.append(user_id)
+
 
 def test_list_users_with_pagination(client):
     """Test listing users with pagination parameters."""
@@ -83,7 +115,7 @@ def test_list_users_with_pagination(client):
     assert isinstance(result, dict)
 
 
-def test_add_data_topup(client, test_user_config):
+def test_add_data_topup(client, test_user_config, cleanup_users):
     """Test adding data top-up to a permanent user."""
     # First create a user
     username = f"data_test_user_{int(time.time())}"
@@ -96,12 +128,15 @@ def test_add_data_topup(client, test_user_config):
         profile_id=test_user_config['profile_id']
     )
 
-    # Extract user ID from response
+    # Extract user ID from response (simplified since create() returns just the data)
     user_id = None
     if isinstance(user, dict):
-        user_id = user.get('data', {}).get('id') or user.get('id')
+        user_id = user.get('id')
 
     if user_id:
+        # Track for cleanup
+        cleanup_users.append(user_id)
+
         # Add data top-up
         result = client.users.add_data(
             user_id=user_id,
@@ -113,7 +148,7 @@ def test_add_data_topup(client, test_user_config):
         assert result.get('success') is True or 'data' in result
 
 
-def test_add_time_topup(client, test_user_config):
+def test_add_time_topup(client, test_user_config, cleanup_users):
     """Test adding time top-up to a permanent user."""
     # First create a user
     username = f"time_test_user_{int(time.time())}"
@@ -126,12 +161,15 @@ def test_add_time_topup(client, test_user_config):
         profile_id=test_user_config['profile_id']
     )
 
-    # Extract user ID from response
+    # Extract user ID from response (simplified since create() returns just the data)
     user_id = None
     if isinstance(user, dict):
-        user_id = user.get('data', {}).get('id') or user.get('id')
+        user_id = user.get('id')
 
     if user_id:
+        # Track for cleanup
+        cleanup_users.append(user_id)
+
         # Add time top-up
         result = client.users.add_time(
             user_id=user_id,
@@ -177,3 +215,30 @@ def test_add_time_topup_to_existing_user(client):
             comment="Integration test time top-up"
         )
         assert isinstance(result, dict)
+
+
+def test_delete_permanent_user(client, test_user_config):
+    """Test deleting a permanent user."""
+    # First create a user to delete
+    username = f"delete_test_user_{int(time.time())}"
+    password = "password123"
+
+    user = client.users.create(
+        username=username,
+        password=password,
+        realm_id=test_user_config['realm_id'],
+        profile_id=test_user_config['profile_id'],
+        name="Delete",
+        surname="Test"
+    )
+
+    # Extract user ID from response (simplified since create() returns just the data)
+    user_id = None
+    if isinstance(user, dict):
+        user_id = user.get('id')
+
+    if user_id:
+        # Delete the user
+        result = client.users.delete(user_id=user_id)
+        assert isinstance(result, dict)
+        assert result.get('success') is True

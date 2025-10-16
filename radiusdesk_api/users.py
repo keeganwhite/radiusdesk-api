@@ -127,10 +127,22 @@ class UserManager:
                 timeout=30
             )
             response.raise_for_status()
-
             response_data = response.json()
+
+            # Check if the operation was successful
+            if not response_data.get('success', True):
+                error_msg = response_data.get('message', 'Unknown error')
+                errors = response_data.get('errors', {})
+                if errors:
+                    error_details = ', '.join([f"{k}: {v}" for k, v in errors.items()])
+                    error_msg = f"{error_msg} - {error_details}"
+                # Use 422 (Unprocessable Entity) for validation/business logic errors
+                # Original HTTP status was {response.status_code} but operation failed
+                raise APIError(f"Failed to create permanent user: {error_msg}", status_code=422)
+
             logger.info(f"Created permanent user: {username}")
-            return response_data
+            # Return just the user data, not the full response wrapper
+            return response_data.get('data', response_data)
 
         except requests.exceptions.RequestException as e:
             status_code = None
@@ -320,28 +332,47 @@ class UserManager:
         url = f"{self.base_url}/permanent-users/delete.json"
         token = self.auth_manager.token
 
-        payload = {
-            "id": user_id,
+        # Query parameters
+        params = {
             "token": token,
-            "sel_language": "4_4",
             "cloud_id": self.cloud_id,
         }
 
+        # JSON payload as array
+        payload = [{"id": user_id}]
+
         cookies = {"Token": token}
+
+        # Build headers with JSON content type
+        headers = build_headers()
+        headers["Content-Type"] = "application/json"
 
         logger.info(f"Deleting permanent user ID: {user_id}")
 
         try:
             response = requests.post(
                 url,
-                headers=build_headers(),
-                data=payload,
+                headers=headers,
+                params=params,
+                json=payload,
                 cookies=cookies,
                 timeout=30
             )
             response.raise_for_status()
 
             response_data = response.json()
+
+            # Check if the operation was successful
+            if not response_data.get('success', True):
+                error_msg = response_data.get('message', 'Unknown error')
+                errors = response_data.get('errors', {})
+                if errors:
+                    error_details = ', '.join([f"{k}: {v}" for k, v in errors.items()])
+                    error_msg = f"{error_msg} - {error_details}"
+                # Use 422 (Unprocessable Entity) for validation/business logic errors
+                # Original HTTP status was {response.status_code} but operation failed
+                raise APIError(f"Failed to delete permanent user: {error_msg}", status_code=422)
+
             logger.info(f"Deleted permanent user ID: {user_id}")
             return response_data
 
