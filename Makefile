@@ -87,7 +87,7 @@ release: lint test build check
 	@echo ""
 	@echo "  [ ] Version updated in pyproject.toml"
 	@echo "  [ ] Version updated in setup.cfg"
-	@echo "  [ ] CHANGELOG.md updated"
+	@echo "  [ ] CHANGELOG.md updated with new version and date"
 	@echo "  [ ] All changes committed"
 	@echo ""
 	@read -p "Have you completed all checklist items? (y/N) " confirm; \
