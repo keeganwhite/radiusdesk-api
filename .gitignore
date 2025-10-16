@@ -120,3 +120,8 @@ Thumbs.db
 PUBLISHING.md
 TESTING.md
 URL_STRUCTURE.md
+VERSION_AND_RELEASE.md
+
+# Dev Scripts
+main.py
+bump_version.py

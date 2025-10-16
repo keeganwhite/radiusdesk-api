@@ -50,7 +50,7 @@ voucher = client.vouchers.create(
     profile_id=2,
     quantity=1
 )
-print(f"Created voucher: {voucher}")
+print(f"Created voucher: {voucher['name']} (ID: {voucher['id']})")
 
 # List all vouchers
 vouchers = client.vouchers.list(limit=100)
@@ -108,13 +108,13 @@ new_token = client.refresh_token()
 
 ```python
 # Create a single voucher
-voucher_code = client.vouchers.create(
+voucher = client.vouchers.create(
     realm_id=1,
     profile_id=2,
     quantity=1,
     never_expire=True
 )
-print(f"Voucher code: {voucher_code}")
+print(f"Voucher code: {voucher['name']} (ID: {voucher['id']})")
 
 # Create multiple vouchers
 vouchers = client.vouchers.create(
@@ -123,7 +123,7 @@ vouchers = client.vouchers.create(
     quantity=10,
     never_expire=False
 )
-print(f"Created {len(vouchers['data'])} vouchers")
+print(f"Created {len(vouchers)} vouchers")
 ```
 
 #### List Vouchers
@@ -143,8 +143,18 @@ result = client.vouchers.list(limit=50, page=2, start=50)
 ```python
 # Get detailed usage information about a voucher
 # (includes connection history, data usage, session info)
-details = client.vouchers.get_details("VOUCHER-CODE-123")
+voucher_code = voucher['name']
+details = client.vouchers.get_details(voucher_code)
 print(details)
+```
+
+#### Delete Voucher
+
+```python
+# Delete a voucher by ID
+result = client.vouchers.delete(voucher_id=123)
+if result.get('success'):
+    print("Voucher deleted successfully!")
 ```
 
 ### User Operations

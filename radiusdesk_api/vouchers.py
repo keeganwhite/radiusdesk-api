@@ -133,7 +133,7 @@ class VoucherManager:
         never_expire: bool = True,
         extra_name: str = "",
         extra_value: str = ""
-    ) -> Union[str, Dict[str, Any]]:
+    ) -> Union[Dict[str, Any], list]:
         """
         Create voucher(s) in the RadiusDesk API.
 
@@ -146,8 +146,8 @@ class VoucherManager:
             extra_value: Extra value field
 
         Returns:
-            If quantity=1, returns the voucher code (string)
-            If quantity>1, returns the full response (dict)
+            If quantity=1, returns the voucher data (dict) with keys: id, name, etc.
+            If quantity>1, returns list of voucher data dicts
 
         Raises:
             APIError: If the request fails
@@ -183,14 +183,25 @@ class VoucherManager:
             response.raise_for_status()
 
             response_data = response.json()
+            logger.info(f"Response data: {response_data}")
+
+            # Check if the operation was successful
+            if not response_data.get('success', True):
+                error_msg = response_data.get('message', 'Unknown error')
+                errors = response_data.get('errors', {})
+                if errors:
+                    error_details = ', '.join([f"{k}: {v}" for k, v in errors.items()])
+                    error_msg = f"{error_msg} - {error_details}"
+                raise APIError(f"Failed to create voucher: {error_msg}", status_code=422)
 
             if quantity == 1:
-                voucher = response_data["data"][0]['name']
-                logger.info(f"Created voucher: {voucher}")
-                return voucher
+                voucher_data = response_data["data"][0]
+                logger.info(f"Created voucher: {voucher_data.get('name')}")
+                return voucher_data
             else:
+                voucher_list = response_data["data"]
                 logger.info(f"Created {quantity} vouchers")
-                return response_data
+                return voucher_list
 
         except requests.exceptions.RequestException as e:
             status_code = None
@@ -199,3 +210,69 @@ class VoucherManager:
             raise APIError(f"Failed to create voucher: {str(e)}", status_code=status_code)
         except (KeyError, IndexError) as e:
             raise APIError(f"Invalid response format: {str(e)}")
+
+    def delete(self, voucher_id: int) -> Dict[str, Any]:
+        """
+        Delete a voucher.
+
+        Args:
+            voucher_id: ID of the voucher to delete
+
+        Returns:
+            Dictionary containing the deletion response
+
+        Raises:
+            APIError: If the request fails
+        """
+        url = f"{self.base_url}/vouchers/delete.json"
+        token = self.auth_manager.token
+
+        # Query parameters
+        params = {
+            "token": token,
+            "cloud_id": self.cloud_id,
+        }
+
+        # JSON payload as array
+        payload = [{"id": voucher_id}]
+
+        cookies = {"Token": token}
+
+        # Build headers with JSON content type
+        headers = build_headers()
+        headers["Content-Type"] = "application/json"
+
+        logger.info(f"Deleting voucher ID: {voucher_id}")
+
+        try:
+            response = requests.post(
+                url,
+                headers=headers,
+                params=params,
+                json=payload,
+                cookies=cookies,
+                timeout=30
+            )
+            response.raise_for_status()
+
+            response_data = response.json()
+
+            # Check if the operation was successful
+            if not response_data.get('success', True):
+                error_msg = response_data.get('message', 'Unknown error')
+                errors = response_data.get('errors', {})
+                if errors:
+                    error_details = ', '.join([f"{k}: {v}" for k, v in errors.items()])
+                    error_msg = f"{error_msg} - {error_details}"
+                # Use 422 (Unprocessable Entity) for validation/business logic errors
+                # Original HTTP status was {response.status_code} but operation failed
+                raise APIError(f"Failed to delete voucher: {error_msg}", status_code=422)
+
+            logger.info(f"Deleted voucher ID: {voucher_id}")
+            return response_data
+
+        except requests.exceptions.RequestException as e:
+            status_code = None
+            if hasattr(e, 'response'):
+                status_code = getattr(e.response, 'status_code', None)
+            raise APIError(f"Failed to delete voucher: {str(e)}", status_code=status_code)
